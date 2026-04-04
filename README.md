@@ -12,37 +12,26 @@ Using a trained **UNet semantic segmentation model**, Drishti analyzes images an
 
 ---
 
-## ✨ Key Features
+## 🎯 Key Features
 
-✅ **Safe Model Loading** – PyTorch 2.6+ compatible with `weights_only=False`  
-✅ **Semantic Segmentation** – 19-class UNet model for scene understanding  
-✅ **Spatial Awareness** – Divides scene into top/middle/bottom regions  
-✅ **Human-Touch Descriptions** – Natural language like "Ahead of you above: car detected"  
-✅ **Real-Time Voice Output** – Windows SAPI5 TTS with human speed (150 WPM)  
-✅ **Dual Mode Operation** – Batch processing OR live camera detection  
-✅ **Cross-Platform Paths** – Windows-safe file handling with `pathlib.Path`  
-✅ **Accessibility-First** – Designed specifically for blind users  
-✅ **GPU/CPU Support** – Auto-detection with fallback to CPU  
-✅ **Fully Documented** – Comprehensive code and usage guides  
+* 🔍 Real-time object detection using YOLOv8 (CPU optimized)
+* 📏 Depth estimation using MiDaS (monocular depth)
+* 📍 Spatial awareness (Left / Center / Right)
+* 🎧 3D spatial audio feedback (direction-based sound)
+* ⚠️ Hazard prioritization system (High / Medium / Low risk)
+* 🔊 Offline text-to-speech (no internet required)
+* ⚡ Optimized for low-end laptops (CPU-only execution)
+* 🧠 Smart alert system (avoids repeated announcements)
+* 📊 FPS display for performance monitoring
 
 ---
 
 ## 🏗️ Project Architecture
 
 ```
-Input (Image or Camera Feed)
-    ↓
-Preprocessing (RGB → Resize 128×256 → Normalize [0,1])
-    ↓
-UNet Model Inference (19-class segmentation)
-    ↓
-Scene Analysis (divide into 3 regions: top/middle/bottom)
-    ↓
-Object Detection (identify obstacles, vehicles, people, etc.)
-    ↓
-Voice Description Generation (human-touch formatting)
-    ↓
-TTS Output (real-time audio + console logging)
+Webcam Input → Object Detection → Depth Estimation → 
+Distance Calculation → Spatial Mapping → Hazard Analysis → 
+Text Generation → Spatial Audio Output
 ```
 
 ---
@@ -50,140 +39,47 @@ TTS Output (real-time audio + console logging)
 ## 📁 Project Structure
 
 ```
-Drishti-AI/
-├── src/
-│   └── predict.py                 ← Main backend script
-├── data/
-│   ├── test/                      ← Input test images
-│   └── predictions/               ← Output masks
-├── trained_model.pth              ← Pre-trained UNet weights
-├── requirements.txt               ← Dependencies
-├── README.md                      ← Main documentation
-└── venv/                          ← Virtual environment
-```
-
----
-
-## 🚀 Quick Start
-
-### 1️⃣ **Installation**
-
-```bash
-# Navigate to project
-cd Drishti-AI
-
-# Activate virtual environment
-.\venv\Scripts\Activate.ps1  # Windows PowerShell
-
-# Install dependencies (if not already installed)
-pip install -r requirements.txt
-```
-
-### 2️⃣ **Run Batch Processing** (Process all test images)
-
-```bash
-python src/predict.py 1
-```
-
-**Output:**
-- Console: Real-time voice descriptions
-- Files: Segmentation masks in `data/predictions/`
-
-### 3️⃣ **Run Live Camera Detection** (Real-time camera feed)
-
-```bash
-python src/predict.py 2
-```
-
-**Controls:**
-- Press 'q' to quit live detection
-
-### 4️⃣ **Interactive Mode** (Choose mode at runtime)
-
-```bash
-python src/predict.py
-```
-
----
-
-## 📊 19 Semantic Classes
-
-| Category | Classes | IDs |
-|----------|---------|-----|
-| **Walkable Areas** | Road, Sidewalk, Terrain | 0, 1, 9 |
-| **Obstacles** | Building, Wall, Fence, Pole, Traffic Light, Traffic Sign | 2-7 |
-| **Vehicles** | Car, Truck, Bus, Train, Motorcycle, Bicycle | 13-18 |
-| **People** | Person, Rider | 11-12 |
-| **Natural** | Vegetation | 8 |
-| **Background** | Sky | 10 |
-
----
-
-## 🎤 Voice Output Examples
-
-### Batch Mode
-```
-[Voice] Ahead of you above: vegetation, sky, traffic light. 
-        At your level: sky, traffic sign, traffic light. 
-        Below you: sky, traffic light.
-
-[Voice] Ahead of you above: sky, traffic sign, traffic light. 
-        At your level: sky, car, traffic sign, traffic light. 
-        Below you: sky, traffic light.
-```
-
-### Live Camera Mode
-```
-[Live] Frame 5: Ahead of you above: sky. At your level: person detected. Below you: road.
-[Live] Frame 10: Ahead of you above: traffic light. At your level: car approaching. Below you: sidewalk.
+drishti/
+│── main.py          # Main application entry point
+│── detection.py     # YOLO object detection
+│── depth.py         # MiDaS depth estimation
+│── spatial.py       # Left/Center/Right classification
+│── hazard.py        # Risk evaluation logic
+│── audio.py         # Text-to-speech + spatial audio
+│── utils.py         # Frame optimization utilities
+│── requirements.txt # Dependencies
+│── README.md        # Project documentation
 ```
 
 ---
 
 ## ⚙️ Installation & Setup
 
-### Step 1: Clone Repository
+### 🔹 Step 1: Clone or Create Project
 
 ```bash
-git clone https://github.com/Ayushibansal805/Drishti-AI.git
-cd Drishti-AI
-```
-
-### Step 2: Create Virtual Environment
-
-```bash
-python -m venv venv
-.\venv\Scripts\Activate.ps1  # Windows
-# or
-source venv/bin/activate  # Linux/Mac
-```
-
-### Step 3: Install Dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-**Dependencies:**
-- `torch` – Deep learning framework
-- `torchvision` – Image processing
-- `numpy` – Numerical computing
-- `Pillow` – Image I/O
-- `matplotlib` – Visualization
-- `pyttsx3` – Text-to-speech
-- `opencv-python` – Camera/video handling
-
-### Step 4: Verify Installation
-
-```bash
-python src/predict.py
+mkdir drishti
+cd drishti
 ```
 
 ---
 
-## 🎯 Usage Modes
+### 🔹 Step 2: Create Virtual Environment
 
-### Mode 1: Batch Processing
+```bash
+python -m venv venv
+venv\Scripts\activate   # Windows
+```
+
+### 🔹 Step 3: Upgrade pip
+
+```bash
+python -m pip install --upgrade pip
+```
+
+---
+
+### 🔹 Step 4: Install Dependencies
 
 Process all images in `data/test/` folder:
 
