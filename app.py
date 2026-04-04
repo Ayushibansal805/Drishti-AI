@@ -547,10 +547,9 @@ def test_model():
 # ==============================
 # Serve React Frontend
 # ==============================
-@app.route('/')
-def serve_index():
-    """Serve the main React app"""
-    return send_from_directory(app.static_folder, 'index.html')
+@app.route("/")
+def home():
+    return {"message": "Drishti AI Backend is running"}
 
 
 @app.route('/<path:path>')
