@@ -122,7 +122,9 @@ const About: React.FC = () => {
       >
         {/* CARD 1 */}
         <div
-          ref={(el) => (cardsRef.current[0] = el)}
+          ref={(el) => {
+  cardsRef.current[0] = el;
+}}
           style={{
             ...cardStyle,
             opacity: visible[0] ? 1 : 0,
@@ -160,7 +162,9 @@ onMouseLeave={(e) => {
 
         {/* CARD 2 */}
         <div
-          ref={(el) => (cardsRef.current[1] = el)}
+          ref={(el) => {
+  cardsRef.current[1] = el;
+}}
           style={{
             ...cardStyle,
             opacity: visible[1] ? 1 : 0,
@@ -191,7 +195,9 @@ onMouseLeave={(e) => {
 
         {/* CARD 3 */}
         <div
-          ref={(el) => (cardsRef.current[2] = el)}
+          ref={(el) => {
+  cardsRef.current[2] = el;
+}}
           style={{
             ...cardStyle,
             opacity: visible[2] ? 1 : 0,
