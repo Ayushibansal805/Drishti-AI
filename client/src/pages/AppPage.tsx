@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState, useCallback } from "react";
-import { checkHealth, sendPrediction, fileToBase64, canvasToBase64, predictionsToMaskImage } from "../services/api";
+import { checkHealth, sendPrediction, fileToBase64, canvasToBase64, predictionsToMaskImage, describeImage } from "../services/api";
+import type { ImageDescriptionResponse } from "../services/api";
 
 interface Message {
   text: string;
@@ -16,6 +17,8 @@ const AppPage: React.FC = () => {
   const [maskImage, setMaskImage] = useState<string | null>(null);
   const [output, setOutput] = useState("🎯 Ready to process images...");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [imageDescription, setImageDescription] = useState<ImageDescriptionResponse | null>(null);
+  const [descriptionLoading, setDescriptionLoading] = useState(false);
   
   // Processing State
   const [isLoading, setIsLoading] = useState(false);
@@ -117,12 +120,15 @@ const AppPage: React.FC = () => {
     setUseCamera(false);
     setOriginalImage(URL.createObjectURL(file));
     setMaskImage(null);
+    setImageDescription(null);
     setOutput("📤 Processing uploaded image...");
     setErrorMessage(null);
     
     try {
       const base64 = await fileToBase64(file);
       await processPrediction(base64);
+      // Also generate description in parallel
+      await generateImageDescription(base64);
     } catch (error) {
       const errorMsg = `Error: ${(error as Error).message}`;
       setErrorMessage(errorMsg);
@@ -146,8 +152,11 @@ const AppPage: React.FC = () => {
       const base64 = canvasToBase64(canvasRef.current);
       setOriginalImage(base64);
       setMaskImage(null);
+      setImageDescription(null);
       
       await processPrediction(base64);
+      // Also generate description in parallel
+      await generateImageDescription(base64);
     } catch (error) {
       console.error("Capture error:", error);
     }
@@ -212,6 +221,45 @@ const AppPage: React.FC = () => {
       setProcessingProgress(0);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // 📝 Generate Image Description
+  const generateImageDescription = async (imageData: string) => {
+    setDescriptionLoading(true);
+    try {
+      const result = await describeImage(imageData);
+      setImageDescription(result);
+      
+      const sourceEmojis: Record<string, string> = {
+        'ollama-llava': '🦙 Ollama',
+        'openai-gpt4-vision': '🤖 OpenAI',
+        'trained-unet-segmentation': '🔬 Trained Model'
+      };
+      
+      const sourceLabel = sourceEmojis[result.source] || result.source;
+      const fullDescription = `${sourceLabel}: ${result.description}`;
+      
+      addMessage(fullDescription, 'ai');
+      setOutput(`📝 ${fullDescription}`);
+      
+      // Text-to-speech for description
+      try {
+        const utterance = new SpeechSynthesisUtterance(result.description);
+        utterance.rate = 0.9;
+        utterance.pitch = 1.0;
+        utterance.onstart = () => setIsSpeaking(true);
+        utterance.onend = () => setIsSpeaking(false);
+        window.speechSynthesis.speak(utterance);
+      } catch (err) {
+        console.warn("Text-to-speech not available:", err);
+      }
+    } catch (error) {
+      const errorMsg = (error as Error).message;
+      setErrorMessage(errorMsg);
+      addMessage(`Description error: ${errorMsg}`, 'system');
+    } finally {
+      setDescriptionLoading(false);
     }
   };
 
@@ -547,6 +595,127 @@ const AppPage: React.FC = () => {
               </div>
             )}
           </div>
+
+          {/* Image Description Card */}
+          {(imageDescription || descriptionLoading) && (
+            <div style={{
+              background: "linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(59, 130, 246, 0.1))",
+              border: "2px solid rgba(139, 92, 246, 0.3)",
+              borderRadius: "12px",
+              padding: "20px",
+              position: "relative",
+              overflow: "hidden"
+            }}>
+              <div style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                background: "linear-gradient(90deg, rgba(139, 92, 246, 0.3), transparent)",
+                height: "3px"
+              }} />
+              
+              <h3 style={{ margin: "0 0 12px 0", fontSize: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
+                📝 {descriptionLoading ? "Generating..." : "Image Description"}
+              </h3>
+
+              {descriptionLoading ? (
+                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                  <div style={{
+                    width: "20px",
+                    height: "20px",
+                    border: "2px solid rgba(139, 92, 246, 0.3)",
+                    borderTopColor: "rgb(139, 92, 246)",
+                    borderRadius: "50%",
+                    animation: "spin 1s linear infinite"
+                  }} />
+                  <span style={{ fontSize: "14px", color: "rgba(255,255,255,0.7)" }}>Analyzing image with multiple models...</span>
+                </div>
+              ) : imageDescription ? (
+                <>
+                  <p style={{
+                    margin: "0 0 12px 0",
+                    fontSize: "14px",
+                    lineHeight: "1.7",
+                    color: "#e2e8f0"
+                  }}>
+                    {imageDescription.description}
+                  </p>
+                  
+                  <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    paddingTop: "12px",
+                    borderTop: "1px solid rgba(148, 163, 184, 0.2)"
+                  }}>
+                    <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.6)" }}>
+                      Source:
+                    </span>
+                    <div style={{
+                      padding: "4px 12px",
+                      borderRadius: "6px",
+                      background: imageDescription.source === 'openai-gpt4-vision' 
+                        ? "rgba(34, 197, 94, 0.2)" 
+                        : imageDescription.source === 'ollama-llava'
+                        ? "rgba(59, 130, 246, 0.2)"
+                        : "rgba(148, 163, 184, 0.2)",
+                      border: imageDescription.source === 'openai-gpt4-vision'
+                        ? "1px solid rgba(34, 197, 94, 0.5)"
+                        : imageDescription.source === 'ollama-llava'
+                        ? "1px solid rgba(59, 130, 246, 0.5)"
+                        : "1px solid rgba(148, 163, 184, 0.5)",
+                      fontSize: "12px",
+                      fontWeight: "600",
+                      color: imageDescription.source === 'openai-gpt4-vision'
+                        ? "#86efac"
+                        : imageDescription.source === 'ollama-llava'
+                        ? "#93c5fd"
+                        : "#cbd5e1"
+                    }}>
+                      {imageDescription.source === 'openai-gpt4-vision' ? '🤖 OpenAI GPT-4 Vision'
+                        : imageDescription.source === 'ollama-llava' ? '🦙 Ollama LLaVA'
+                        : '🔬 Trained Model'}
+                    </div>
+                  </div>
+
+                  {imageDescription.all_attempts && imageDescription.all_attempts.length > 1 && (
+                    <details style={{
+                      marginTop: "12px",
+                      fontSize: "12px",
+                      color: "rgba(255,255,255,0.6)",
+                      cursor: "pointer"
+                    }}>
+                      <summary style={{ cursor: "pointer", marginBottom: "8px" }}>
+                        📊 View all attempts ({imageDescription.all_attempts.length})
+                      </summary>
+                      <div style={{ paddingLeft: "12px", display: "flex", flexDirection: "column", gap: "8px" }}>
+                        {imageDescription.all_attempts.map((attempt, idx) => (
+                          <div key={idx} style={{
+                            padding: "8px",
+                            borderRadius: "6px",
+                            background: attempt.success 
+                              ? "rgba(34, 197, 94, 0.1)" 
+                              : "rgba(239, 68, 68, 0.1)",
+                            borderLeft: `3px solid ${attempt.success ? "rgb(34, 197, 94)" : "rgb(239, 68, 68)"}`
+                          }}>
+                            <div style={{ fontWeight: "600", marginBottom: "4px" }}>
+                              {attempt.success ? '✓' : '✕'} {attempt.model || 'Unknown'}
+                            </div>
+                            <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.7)" }}>
+                              {attempt.success 
+                                ? attempt.description?.substring(0, 100) + '...' 
+                                : attempt.error}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </details>
+                  )}
+                </>
+              ) : null}
+            </div>
+          )}
 
           {/* Messages Panel */}
           <div style={{

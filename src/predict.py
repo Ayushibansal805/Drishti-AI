@@ -204,7 +204,7 @@ def format_description_for_blind_user(top_desc, middle_desc, bottom_desc):
 def get_paths():
     # project root is parent of src
     base_dir = Path(__file__).resolve().parent.parent
-    model_path = base_dir / "trained_model.pth"
+    model_path = base_dir / "models" / "best_model.pth"
     test_dir = base_dir / "data" / "test"
     pred_dir = base_dir / "data" / "predictions"
     return base_dir, model_path, test_dir, pred_dir

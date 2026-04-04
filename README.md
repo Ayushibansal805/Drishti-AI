@@ -23,6 +23,44 @@ Using a trained **UNet semantic segmentation model**, Drishti analyzes images an
 * ⚡ Optimized for low-end laptops (CPU-only execution)
 * 🧠 Smart alert system (avoids repeated announcements)
 * 📊 FPS display for performance monitoring
+* 🖼️ **NEW:** Multi-source image descriptions (Ollama + OpenAI + Trained Model with smart fallback)
+
+---
+
+## 🖼️ Image Description Feature (NEW!)
+
+Drishti now includes **advanced image description capabilities** powered by multiple vision models:
+
+### 📝 Description Sources
+- **🦙 Ollama (Local)** – Fast, privacy-friendly LLaVA model running locally
+- **🤖 OpenAI GPT-4 Vision** – Most detailed descriptions via API
+- **🔬 Trained Model** – Real-time object segmentation fallback
+
+### ⚡ Smart Fallback System
+1. Tries Ollama first (local, ~3 seconds)
+2. Falls back to OpenAI if Ollama unavailable (~5 seconds)
+3. Uses trained UNet model as final fallback (~1 second)
+4. Automatically selects the **best quality** description
+
+### 🎯 Use Cases
+- Getting detailed, natural language descriptions of images
+- Understanding complex scenes beyond basic object lists
+- Accessibility: Higher quality voice descriptions for blind users
+- Scene comprehension with contextual details
+
+### 🚀 Quick Start
+```bash
+# Run setup
+powershell -ExecutionPolicy Bypass -File setup.ps1
+
+# Start Ollama (optional, for local fast descriptions)
+ollama serve
+
+# Start the app
+powershell -ExecutionPolicy Bypass -File run.ps1
+```
+
+📚 **Full Setup Guide:** See [SETUP_IMAGE_DESCRIPTION.md](SETUP_IMAGE_DESCRIPTION.md)
 
 ---
 

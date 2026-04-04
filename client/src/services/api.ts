@@ -25,6 +25,19 @@ export interface HealthResponse {
   device: string;
 }
 
+export interface ImageDescriptionResponse {
+  success: boolean;
+  description: string;
+  source: string; // 'ollama-llava', 'openai-gpt4-vision', 'trained-unet-segmentation'
+  all_attempts: Array<{
+    success: boolean;
+    description?: string;
+    model?: string;
+    error?: string;
+  }>;
+  timestamp: string;
+}
+
 export interface ApiError {
   error: string;
   details?: string;
@@ -113,6 +126,49 @@ export async function sendPrediction(
       throw error;
     }
     throw new Error('An unexpected error occurred during prediction');
+  }
+}
+
+/**
+ * Send image for description - uses multiple sources with fallback
+ * @param imageData Base64 encoded image
+ */
+export async function describeImage(imageData: string): Promise<ImageDescriptionResponse> {
+  try {
+    if (!imageData) {
+      throw new Error('No image data provided');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/describe-image`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        image: imageData
+      }),
+      signal: AbortSignal.timeout(60000), // 60 second timeout for vision APIs
+    });
+
+    if (!response.ok) {
+      let errorMessage = 'Image description failed';
+      try {
+        const errorData: ApiError = await response.json();
+        errorMessage = errorData.error || errorMessage;
+      } catch {
+        errorMessage = `Server error: ${response.statusText}`;
+      }
+      throw new Error(errorMessage);
+    }
+
+    const result: ImageDescriptionResponse = await response.json();
+    return result;
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error('Image description error:', error.message);
+      throw error;
+    }
+    throw new Error('An unexpected error occurred during image description');
   }
 }
 
