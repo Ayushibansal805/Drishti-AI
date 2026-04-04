@@ -3,3 +3,5 @@ torchvision
 numpy
 Pillow
 matplotlib
+pyttsx3
+opencv-python
